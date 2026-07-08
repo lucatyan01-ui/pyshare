@@ -1,0 +1,17 @@
+# Web API 框架
+fastapi==0.116.1
+
+# ASGI 服务器，用来运行 FastAPI 项目
+uvicorn[standard]==0.35.0
+
+# 从 .env 读取配置，并提供类型校验
+pydantic-settings==2.10.1
+
+# 支持表单和文件上传
+python-multipart==0.0.20
+
+# 数据库 ORM 工具
+sqlalchemy==2.0.41
+
+# 读取 .env 环境变量文件
+python-dotenv==1.1.1
