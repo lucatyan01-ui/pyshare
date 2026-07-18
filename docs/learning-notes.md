@@ -296,3 +296,350 @@ debug 变量的类型是 bool，默认值是 True。
 ```
 
 这个回答是正确的。
+
+## 10. FastAPI 入口文件 app/main.py
+
+今天创建了项目的第一个 Web 入口文件：
+
+```text
+app/main.py
+```
+
+当前完整代码：
+
+```python
+from fastapi import FastAPI  # 从 fastapi 库中导入 FastAPI 类，用它创建 Web 应用
+
+
+app = FastAPI()  # 创建一个 FastAPI 应用对象，并把它保存到变量 app 里
+
+
+@app.get("/health")  # 注册一个 GET 接口，访问地址是 /health
+def health_check():  # 定义接口处理函数，访问 /health 时会执行这个函数
+    return {"status": "ok"}  # 返回一个字典，FastAPI 会自动转换成 JSON 响应
+```
+
+### 这段代码做了什么
+
+这段代码创建了一个 FastAPI Web 应用，并定义了第一个接口 `/health`。
+
+当浏览器访问：
+
+```text
+http://127.0.0.1:8000/health
+```
+
+程序会执行：
+
+```python
+health_check()
+```
+
+然后返回：
+
+```json
+{"status": "ok"}
+```
+
+### 哪些是 Python 保留字
+
+保留字是 Python 语言已经规定好用途的词，不能随便拿来当变量名。
+
+这段代码里出现的保留字：
+
+```text
+from
+import
+def
+return
+```
+
+含义：
+
+- `from`：从某个模块里导入东西。
+- `import`：导入某个工具、类、函数或模块。
+- `def`：定义函数。
+- `return`：返回函数结果。
+
+### 哪些是库或框架提供的名字
+
+这些不是我起的，是 FastAPI 框架提供的：
+
+```text
+fastapi
+FastAPI
+get
+```
+
+含义：
+
+- `fastapi`：第三方库名称。
+- `FastAPI`：FastAPI 库里的类，用来创建 Web 应用。
+- `get`：FastAPI 应用对象的方法，用来注册 HTTP GET 接口。
+
+### 哪些是我们自己起的名字
+
+这些名字是我们自己定义的：
+
+```text
+app
+health_check
+/health
+status
+ok
+```
+
+含义：
+
+- `app`：变量名，保存 FastAPI 应用对象。这个名字可以改，但大家通常都叫 `app`。
+- `health_check`：函数名，表示健康检查。这个名字可以改，比如 `check_health`。
+- `/health`：接口地址，是我们自己设计的 URL 路径。
+- `status`：返回 JSON 里的字段名，是我们自己定的。
+- `ok`：返回 JSON 里的字段值，是我们自己定的。
+
+### 装饰器
+
+这一行：
+
+```python
+@app.get("/health")
+```
+
+叫装饰器。
+
+可以先理解成：把下面的函数注册成一个 Web 接口。
+
+也就是说，这行代码把：
+
+```python
+health_check()
+```
+
+和访问地址：
+
+```text
+/health
+```
+
+绑定到一起。
+
+### 容易出错的点
+
+1. 括号必须是英文半角括号：
+
+```python
+FastAPI()
+```
+
+不能写成中文全角括号：
+
+```python
+FastAPI（）
+```
+
+2. `return` 后面建议加空格：
+
+```python
+return {"status": "ok"}
+```
+
+不要写成：
+
+```python
+return{"status": "ok"}
+```
+
+3. `return` 前面要缩进 4 个空格，因为它属于 `health_check` 函数内部。
+
+## 11. 项目验证：运行 FastAPI 并访问 /health
+
+今天第一次把项目真正运行起来，并在浏览器中验证了 `/health` 接口。
+
+### 1. 创建虚拟环境
+
+命令：
+
+```bash
+python3 -m venv .venv
+```
+
+含义：
+
+```text
+python3  使用 Python 3
+-m venv  运行 Python 自带的 venv 模块
+.venv    创建一个名叫 .venv 的虚拟环境目录
+```
+
+一句话理解：
+
+```text
+.venv = 当前项目自己的 Python 小环境
+```
+
+虚拟环境的作用：
+
+- 不污染电脑全局 Python 环境。
+- 不同项目可以安装不同版本的依赖。
+- 让项目依赖更清楚、更容易迁移。
+
+### 2. 查看隐藏目录
+
+普通命令：
+
+```bash
+ls
+```
+
+不会显示以点开头的隐藏文件和目录。
+
+所以 `.venv` 需要用：
+
+```bash
+ls -a
+```
+
+才能看到。
+
+### 3. 启用虚拟环境
+
+命令：
+
+```bash
+source .venv/bin/activate
+```
+
+启用成功后，终端前面会出现：
+
+```text
+(.venv)
+```
+
+这表示后面的 `python` 和 `pip` 默认都使用当前项目的虚拟环境。
+
+### 4. pip 是什么
+
+`pip` 是 Python 的软件包安装工具。
+
+可以类比以前 Linux 里的 `yum`：
+
+```text
+yum  给 Linux 系统安装软件
+pip  给 Python 项目安装 Python 库
+```
+
+例如：
+
+```bash
+pip install fastapi
+```
+
+表示安装 `fastapi` 这个 Python 库。
+
+### 5. requirements.txt 是什么
+
+`requirements.txt` 是 Python 项目的依赖清单。
+
+里面记录项目需要安装哪些 Python 库和版本。
+
+我们执行：
+
+```bash
+pip install -r requirements.txt
+```
+
+意思是：
+
+```text
+按照 requirements.txt 这个清单，批量安装项目依赖。
+```
+
+### 6. 启动 FastAPI 项目
+
+命令：
+
+```bash
+uvicorn app.main:app --reload
+```
+
+拆开理解：
+
+```text
+uvicorn        启动 FastAPI 项目的服务器
+app.main       找到 app/main.py 这个 Python 模块
+app            找到 main.py 里的 app 变量
+--reload       开发模式，代码变化后自动重启
+```
+
+启动成功时会看到：
+
+```text
+Uvicorn running on http://127.0.0.1:8000
+```
+
+### 7. 浏览器验证接口
+
+访问：
+
+```text
+http://127.0.0.1:8000/health
+```
+
+看到：
+
+```json
+{"status":"ok"}
+```
+
+说明：
+
+- FastAPI 项目启动成功。
+- `app/main.py` 被正确加载。
+- `/health` 接口能正常访问。
+- 返回结果是正确的 JSON。
+
+### 8. 终端日志怎么看
+
+成功访问 `/health` 时，终端里看到：
+
+```text
+GET /health HTTP/1.1 200 OK
+```
+
+含义：
+
+```text
+GET      浏览器发起的是 GET 请求
+/health 访问的是 /health 地址
+200 OK   请求成功
+```
+
+### 9. favicon.ico 的 404
+
+终端里还看到：
+
+```text
+GET /favicon.ico HTTP/1.1 404 Not Found
+```
+
+这个不是错误。
+
+原因是：浏览器会自动请求网站小图标 `favicon.ico`。
+
+我们现在还没有做网站图标，所以返回 `404 Not Found` 正常，不影响 `/health` 接口。
+
+### 10. 停止服务
+
+在 VS Code 终端里点击正在运行服务的终端区域，然后按：
+
+```text
+Control + C
+```
+
+看到类似：
+
+```text
+Application shutdown complete
+```
+
+说明服务已经停止。
