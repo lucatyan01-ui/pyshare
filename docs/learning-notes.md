@@ -953,3 +953,230 @@ requirements.txt
 - 复制仓库地址。
 - 使用 `git clone` 下载项目。
 - 下载 ZIP 文件。
+
+## 13. main.py 接入配置对象 settings
+
+今天把 `app/main.py` 从简单写法：
+
+```python
+app = FastAPI()
+```
+
+升级成了读取配置的写法：
+
+```python
+app = FastAPI(  # 创建一个 FastAPI 应用对象，并把它保存到变量 app 里
+    title=settings.app_name,  # 从配置中读取项目名称，显示在接口文档页面
+    debug=settings.debug,  # 从配置中读取是否开启调试模式
+)
+```
+
+同时在文件开头增加：
+
+```python
+from app.core.config import settings  # 导入项目配置对象，读取项目名、调试开关等配置
+```
+
+### 1. 为什么要这样改
+
+原来：
+
+```python
+app = FastAPI()
+```
+
+也能运行。
+
+但是项目名、调试开关等信息都没有从配置中心读取。
+
+现在：
+
+```python
+title=settings.app_name
+debug=settings.debug
+```
+
+表示 `main.py` 不把配置写死，而是从 `app/core/config.py` 中读取。
+
+一句话理解：
+
+```text
+main.py 负责启动应用
+config.py 负责集中管理配置
+```
+
+这样以后要改项目名、运行环境、数据库地址、上传目录等配置，不需要到处改代码。
+
+### 2. 这行 import 怎么理解
+
+代码：
+
+```python
+from app.core.config import settings
+```
+
+拆开看：
+
+```text
+from             Python 保留字，表示从哪里导入
+app.core.config  我们项目里的模块路径，对应 app/core/config.py
+import           Python 保留字，表示导入
+settings         config.py 里创建好的配置对象
+```
+
+意思是：
+
+```text
+从 app/core/config.py 这个文件里，把 settings 配置对象拿过来使用。
+```
+
+### 3. 哪些是固定写法，哪些是我们自己定义的
+
+代码：
+
+```python
+app = FastAPI(
+    title=settings.app_name,
+    debug=settings.debug,
+)
+```
+
+拆开理解：
+
+```text
+app       我们自己起的变量名，FastAPI 项目里通常叫 app
+FastAPI   框架提供的类名，固定来自 fastapi 库
+title     FastAPI 支持的参数名，不是我们随便起的
+debug     FastAPI 支持的参数名，不是我们随便起的
+settings  我们项目中定义的配置对象
+app_name  我们在 Settings 类中定义的配置字段
+debug     我们在 Settings 类中定义的配置字段
+```
+
+注意：这里有两个 `debug`。
+
+第一个：
+
+```python
+debug=
+```
+
+是 FastAPI 支持的参数名。
+
+第二个：
+
+```python
+settings.debug
+```
+
+是我们配置对象里的字段。
+
+### 4. FastAPI 是什么
+
+FastAPI 是一个 Python Web 后端框架。
+
+一句话理解：
+
+```text
+FastAPI = 帮我们用 Python 写网站接口/API 的工具
+```
+
+它负责：
+
+- 接收浏览器或客户端发来的 HTTP 请求。
+- 根据访问路径找到对应的 Python 函数。
+- 执行函数。
+- 把函数返回值转换成 HTTP 响应。
+- 自动生成接口文档页面。
+
+例如：
+
+```python
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+```
+
+意思是：
+
+```text
+当浏览器用 GET 请求访问 /health 时，执行 health_check 函数。
+```
+
+### 5. /docs 自动文档页
+
+今天访问了：
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+这是 FastAPI 自动生成的接口文档页面。
+
+页面上显示：
+
+```text
+pyshare
+```
+
+说明这句配置生效了：
+
+```python
+title=settings.app_name
+```
+
+页面中还能看到：
+
+```text
+GET /health  Health Check
+```
+
+说明 FastAPI 已经识别到了 `/health` 接口。
+
+其中 `Health Check` 是 FastAPI 根据函数名：
+
+```python
+health_check
+```
+
+自动转换出来的显示名称。
+
+### 6. 今天的验证结果
+
+运行命令：
+
+```bash
+uvicorn app.main:app --reload
+```
+
+访问：
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+验证结果：
+
+- 自动文档页面可以打开。
+- 页面标题显示 `pyshare`。
+- `/health` 接口出现在文档里。
+- 说明 `main.py` 已经成功接入 `settings` 配置对象。
+
+### 7. 下次继续前要做
+
+下次开机后，先确认状态：
+
+```bash
+cd /Users/lucatyan/work/python/pyshare
+git status
+```
+
+如果看到 `app/main.py` 和 `docs/learning-notes.md` 有改动，说明今天这次内容还没有提交。
+
+下次可以先提交：
+
+```bash
+git add app/main.py docs/learning-notes.md
+git commit -m "接入 FastAPI 应用配置"
+git push
+```
