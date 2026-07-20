@@ -643,3 +643,313 @@ Application shutdown complete
 ```
 
 说明服务已经停止。
+
+## 12. Git 和 GitHub 的关系
+
+今天把本地 `pyshare` 项目上传到了 GitHub。
+
+### 1. 我的账号和仓库信息
+
+GitHub 账号：
+
+```text
+lucatyan01-ui
+```
+
+Git 邮箱：
+
+```text
+lucatyan01@gmail.com
+```
+
+本地项目目录：
+
+```text
+/Users/lucatyan/work/python/pyshare
+```
+
+GitHub 远程仓库：
+
+```text
+https://github.com/lucatyan01-ui/pyshare.git
+```
+
+仓库状态：
+
+```text
+Private 私有仓库
+```
+
+项目说明：
+
+```text
+Python FastAPI file sharing project
+```
+
+### 2. Git 和 GitHub 分别是什么
+
+一句话理解：
+
+```text
+Git    = 本地版本管理工具
+GitHub = 网上保存、同步、展示 Git 仓库的平台
+```
+
+当前项目在本机有一个隐藏目录：
+
+```text
+.git
+```
+
+这个目录保存了本地 Git 仓库的提交历史。
+
+GitHub 上的 `pyshare` 仓库是远程仓库，用来备份和同步代码。
+
+### 3. local 和 remote
+
+```text
+local repository   本地仓库，在自己电脑上
+remote repository  远程仓库，在 GitHub 上
+```
+
+本地仓库：
+
+```text
+/Users/lucatyan/work/python/pyshare
+```
+
+远程仓库：
+
+```text
+https://github.com/lucatyan01-ui/pyshare.git
+```
+
+### 4. origin 是什么
+
+查看远程仓库：
+
+```bash
+git remote -v
+```
+
+当前输出：
+
+```text
+origin  https://github.com/lucatyan01-ui/pyshare.git (fetch)
+origin  https://github.com/lucatyan01-ui/pyshare.git (push)
+```
+
+`origin` 是远程仓库地址的别名。
+
+也就是说：
+
+```text
+origin = https://github.com/lucatyan01-ui/pyshare.git
+```
+
+`fetch` 表示可以从 GitHub 拉取代码。
+
+`push` 表示可以把本地代码上传到 GitHub。
+
+### 5. 添加远程仓库
+
+今天执行过：
+
+```bash
+git remote add origin https://github.com/lucatyan01-ui/pyshare.git
+```
+
+含义：
+
+```text
+给当前本地仓库添加一个远程仓库地址，并把这个远程仓库命名为 origin。
+```
+
+### 6. 第一次 push
+
+今天执行过：
+
+```bash
+git push -u origin main
+```
+
+拆开理解：
+
+```text
+git push  把本地提交上传到远程仓库
+-u        建立本地 main 和远程 main 的默认关联
+origin    远程仓库别名
+main      当前主分支
+```
+
+成功时看到：
+
+```text
+branch 'main' set up to track 'origin/main'
+```
+
+意思是：
+
+```text
+本地 main 分支已经和 GitHub 上的 origin/main 分支建立关联。
+```
+
+以后本地提交后，可以直接执行：
+
+```bash
+git push
+```
+
+不用每次都写：
+
+```bash
+git push -u origin main
+```
+
+### 7. 平时提交和上传流程
+
+以后每次改完代码，常用流程是：
+
+```bash
+git status
+git add .
+git commit -m "本次修改说明"
+git push
+```
+
+含义：
+
+```text
+git status  查看哪些文件变了
+git add .   把改动加入暂存区
+git commit  保存成本地版本
+git push    上传到 GitHub
+```
+
+### 8. 换电脑继续学习
+
+第一次在新电脑下载项目：
+
+```bash
+git clone https://github.com/lucatyan01-ui/pyshare.git
+cd pyshare
+```
+
+`clone` 的意思是：
+
+```text
+把 GitHub 上的远程仓库完整下载到本地，包括代码和提交历史。
+```
+
+以后在另一台电脑继续前，先拉取最新代码：
+
+```bash
+git pull
+```
+
+`pull` 的意思是：
+
+```text
+从 GitHub 拉取远程仓库的最新提交，合并到本地。
+```
+
+### 9. 下载别人的项目
+
+如果别人的 GitHub 仓库是公开的，可以点击绿色 `Code` 按钮，复制 HTTPS 地址，然后执行：
+
+```bash
+git clone 别人的仓库地址
+```
+
+例如：
+
+```bash
+git clone https://github.com/someone/project.git
+```
+
+如果只是临时看代码，也可以点击：
+
+```text
+Code -> Download ZIP
+```
+
+但是 `Download ZIP` 只下载文件，不包含完整 Git 提交历史，所以不适合长期开发学习。
+
+### 10. fork 是什么
+
+`fork` 是 GitHub 上的复制操作。
+
+可以理解成：
+
+```text
+把别人的仓库复制一份到自己的 GitHub 账号下。
+```
+
+常见场景：
+
+- 想基于别人的项目做自己的版本。
+- 想给开源项目贡献代码。
+- 想先保存一份别人的项目。
+
+### 11. 今天遇到的 GitHub 授权
+
+第一次 `git push` 时，VS Code 弹出 GitHub 授权。
+
+大致流程：
+
+```text
+VS Code 请求登录 GitHub
+浏览器打开 GitHub 授权页面
+选择 lucatyan01-ui 账号
+授权 Visual Studio Code
+邮箱验证码确认身份
+回到 VS Code
+重新 git push
+```
+
+遇到 Safari 显示无法连接 `127.0.0.1` 的回调页面时，不是项目错误。
+
+原因是浏览器回调 VS Code 授权时没有接上。
+
+处理方式：
+
+```text
+回到 VS Code，按提示重新授权，或者重新执行 git push。
+```
+
+最后 push 成功，说明本地仓库和 GitHub 已经连通。
+
+### 12. GitHub 页面怎么看
+
+仓库首页左上角：
+
+```text
+lucatyan01-ui / pyshare
+```
+
+表示：
+
+```text
+账号名 / 仓库名
+```
+
+`Private` 表示私有仓库。
+
+文件列表里能看到：
+
+```text
+app
+docs
+.env.example
+.gitignore
+README.md
+requirements.txt
+```
+
+说明本地文件已经上传到了 GitHub。
+
+绿色 `Code` 按钮可以：
+
+- 复制仓库地址。
+- 使用 `git clone` 下载项目。
+- 下载 ZIP 文件。
