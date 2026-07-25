@@ -1180,3 +1180,210 @@ git add app/main.py docs/learning-notes.md
 git commit -m "接入 FastAPI 应用配置"
 git push
 ```
+
+## 14. 路由拆分：把 /health 从 main.py 拆出去
+
+今天学习了路由拆分。
+
+一句话理解：
+
+```text
+main.py 只负责创建应用和组装路由
+routers/*.py 负责按功能保存具体接口
+```
+
+### 1. 为什么要路由拆分
+
+最开始 `/health` 直接写在 `app/main.py` 里：
+
+```python
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+```
+
+现在只有一个接口时，这样写没问题。
+
+但后面项目会有很多接口：
+
+```text
+注册
+登录
+上传文件
+下载文件
+删除文件
+生成分享链接
+访问分享链接
+```
+
+如果全部写在 `main.py`，文件会越来越乱。
+
+所以真实项目通常会拆成：
+
+```text
+app/
+  main.py
+  routers/
+    health.py
+    auth.py
+    files.py
+    shares.py
+```
+
+### 2. 新建 health 路由文件
+
+今天新建了：
+
+```text
+app/routers/health.py
+```
+
+完整代码：
+
+```python
+from fastapi import APIRouter  # 导入 APIRouter，用来创建一组路由
+
+
+router = APIRouter()  # 创建一个路由对象，后面的接口先挂到这个 router 上
+
+
+@router.get("/health")  # 注册一个 GET 接口，访问地址是 /health
+def health_check():  # 定义接口处理函数，访问 /health 时会执行这个函数
+    return {"status": "ok"}  # 返回一个字典，FastAPI 会自动转换成 JSON 响应
+```
+
+### 3. APIRouter 是什么
+
+`APIRouter` 是 FastAPI 提供的路由工具。
+
+可以先理解成：
+
+```text
+APIRouter = 一个小路由器，用来管理一组相关接口
+```
+
+以前写法：
+
+```python
+@app.get("/health")
+```
+
+表示直接把接口挂到主应用 `app` 上。
+
+现在写法：
+
+```python
+@router.get("/health")
+```
+
+表示先把接口挂到 `router` 这个小路由器上。
+
+最后再由 `main.py` 把这个小路由器挂到主应用上。
+
+### 4. main.py 如何挂载路由
+
+在 `app/main.py` 中新增导入：
+
+```python
+from app.routers import health  # 导入健康检查路由模块
+```
+
+这句的意思是：
+
+```text
+从 app/routers 文件夹中导入 health.py 这个模块。
+```
+
+然后新增：
+
+```python
+app.include_router(health.router)  # 把健康检查路由挂载到 FastAPI 主应用上
+```
+
+这句的意思是：
+
+```text
+把 health.py 里的 router 接到主应用 app 上。
+```
+
+### 5. 旧代码为什么注释保留
+
+今天没有直接删除 `main.py` 里的旧 `/health` 代码，而是注释保留：
+
+```python
+# 下面是旧写法：直接在 main.py 中注册 /health 接口。
+# 现在已经把 /health 拆到 app/routers/health.py，所以这里先注释保留学习记录。
+# @app.get("/health")  # 注册一个 GET 接口，访问地址是 /health
+# def health_check():  # 定义接口处理函数，访问 /health 时会执行这个函数
+#     return {"status": "ok"}  # 返回一个字典，FastAPI 会自动转换成 JSON 响应
+```
+
+原因：
+
+```text
+这是学习阶段，保留旧写法可以看清楚代码从 main.py 迁移到 routers/health.py 的过程。
+```
+
+以后项目成熟后，可以再删除旧注释。
+
+### 6. 拆分后的访问链路
+
+现在访问：
+
+```text
+http://127.0.0.1:8000/health
+```
+
+实际链路是：
+
+```text
+浏览器访问 /health
+        ↓
+main.py 中的 app.include_router(health.router)
+        ↓
+app/routers/health.py 中的 router
+        ↓
+health_check()
+        ↓
+return {"status": "ok"}
+```
+
+### 7. 今天的验证结果
+
+运行：
+
+```bash
+uvicorn app.main:app --reload
+```
+
+浏览器访问：
+
+```text
+http://127.0.0.1:8000/health
+```
+
+看到：
+
+```json
+{"status":"ok"}
+```
+
+说明路由拆分成功，`main.py` 能正确加载 `app/routers/health.py`。
+
+### 8. 今天结束前的 Git 操作
+
+今天涉及的文件：
+
+```text
+app/main.py
+app/routers/health.py
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/main.py app/routers/health.py docs/learning-notes.md
+git commit -m "拆分健康检查路由"
+git push
+```

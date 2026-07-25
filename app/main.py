@@ -1,6 +1,7 @@
 from fastapi import FastAPI  # 从 fastapi 库中导入 FastAPI 类，用它创建 Web 应用
 
 from app.core.config import settings  # 导入项目配置对象，读取项目名、调试开关等配置
+from app.routers import health  # 导入健康检查路由模块
 
 
 app = FastAPI(  # 创建一个 FastAPI 应用对象，并把它保存到变量 app 里
@@ -9,6 +10,11 @@ app = FastAPI(  # 创建一个 FastAPI 应用对象，并把它保存到变量 a
 )
 
 
-@app.get("/health")  # 注册一个 GET 接口，访问地址是 /health
-def health_check():  # 定义接口处理函数，访问 /health 时会执行这个函数
-    return {"status": "ok"}  # 返回一个字典，FastAPI 会自动转换成 JSON 响应
+app.include_router(health.router)  # 把健康检查路由挂载到 FastAPI 主应用上
+
+
+# 下面是旧写法：直接在 main.py 中注册 /health 接口。
+# 现在已经把 /health 拆到 app/routers/health.py，所以这里先注释保留学习记录。
+# @app.get("/health")  # 注册一个 GET 接口，访问地址是 /health
+# def health_check():  # 定义接口处理函数，访问 /health 时会执行这个函数
+#     return {"status": "ok"}  # 返回一个字典，FastAPI 会自动转换成 JSON 响应
