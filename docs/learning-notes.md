@@ -1387,3 +1387,235 @@ git add app/main.py app/routers/health.py docs/learning-notes.md
 git commit -m "拆分健康检查路由"
 git push
 ```
+
+## 15. FastAPI 框架本身在哪里
+
+今天明确了一个重要概念：
+
+```text
+FastAPI 框架本身不在 app/、docs/、docker/ 这些项目目录里。
+```
+
+FastAPI 是通过 `pip` 安装到当前项目的虚拟环境 `.venv` 中的第三方库。
+
+大概位置类似：
+
+```text
+/Users/lucatyan/work/python/pyshare/.venv/lib/python.../site-packages/fastapi/
+```
+
+其中：
+
+```text
+.venv         当前项目自己的 Python 虚拟环境
+site-packages Python 第三方库安装目录
+fastapi       FastAPI 框架本体
+```
+
+项目代码中这句：
+
+```python
+from fastapi import FastAPI
+```
+
+意思是：
+
+```text
+从 .venv 中安装的 fastapi 包里，导入 FastAPI 这个类。
+```
+
+### FastAPI 会自动生成项目结构吗
+
+不会。
+
+FastAPI 不像某些框架那样强制生成固定项目结构。
+
+例如：
+
+```text
+app/
+docs/
+docker/
+tests/
+```
+
+这些不是 FastAPI 自动创建的。
+
+这些是 `pyshare` 项目的目录结构，是按照真实后端项目习惯规划出来的。
+
+当前项目中：
+
+```text
+app/      放 Python 应用代码
+docs/     放学习笔记和项目文档
+docker/   以后放 Docker、Nginx 等部署配置
+tests/    以后放自动化测试
+```
+
+### app 目录里的几个子目录
+
+```text
+app/core/      项目配置，例如 config.py
+app/db/        数据库相关代码，后面会继续学习
+app/routers/   路由接口代码
+app/services/  业务逻辑代码，后面会继续使用
+```
+
+一句话总结：
+
+```text
+FastAPI 提供 Web 框架能力；
+项目目录结构由开发者自己组织；
+我们当前的 app、docs、docker、tests 是 pyshare 项目结构，不是 FastAPI 框架本身。
+```
+
+## 16. 第一个 /files 文件管理入口
+
+今天开始按照“迭代式 + 增量式开发”的思路推进文件管理功能。
+
+本轮小目标：
+
+```text
+访问 /files 页面，能看到一个简单的文件管理页面标题。
+```
+
+暂时不做：
+
+```text
+数据库
+用户注册
+用户登录
+对象存储
+分享链接
+```
+
+先让核心链路一点点跑起来。
+
+### 1. 新建文件管理路由
+
+今天新建了：
+
+```text
+app/routers/files.py
+```
+
+完整代码：
+
+```python
+from fastapi import APIRouter  # 导入 APIRouter，用来创建文件管理相关路由
+
+
+router = APIRouter()  # 创建文件管理路由对象，后面的 /files 页面会挂到这个 router 上
+
+
+@router.get("/files")  # 注册一个 GET 接口，访问地址是 /files
+def files_page():  # 定义文件管理页面处理函数，访问 /files 时会执行它
+    return {"title": "文件管理页面"}  # 先返回一个简单 JSON，证明 /files 页面能访问
+```
+
+### 2. 在 main.py 中挂载 files 路由
+
+在 `app/main.py` 中，把导入改成：
+
+```python
+from app.routers import files, health  # 导入文件管理路由模块和健康检查路由模块
+```
+
+然后新增：
+
+```python
+app.include_router(files.router)  # 把文件管理路由挂载到 FastAPI 主应用上
+```
+
+现在 `main.py` 会挂载两个路由：
+
+```python
+app.include_router(files.router)  # 把文件管理路由挂载到 FastAPI 主应用上
+app.include_router(health.router)  # 把健康检查路由挂载到 FastAPI 主应用上
+```
+
+### 3. /files 的访问链路
+
+现在访问：
+
+```text
+http://127.0.0.1:8000/files
+```
+
+实际链路是：
+
+```text
+浏览器访问 /files
+        ↓
+main.py 中的 app.include_router(files.router)
+        ↓
+app/routers/files.py 中的 router
+        ↓
+files_page()
+        ↓
+return {"title": "文件管理页面"}
+```
+
+### 4. 验证结果
+
+运行：
+
+```bash
+uvicorn app.main:app --reload
+```
+
+访问：
+
+```text
+http://127.0.0.1:8000/files
+```
+
+Chrome 显示：
+
+```json
+{"title":"文件管理页面"}
+```
+
+说明 `/files` 路由已经成功接入。
+
+### 5. Safari 中文乱码问题
+
+今天看到 Safari 中中文 JSON 显示乱码，但 Chrome 显示正常。
+
+判断：
+
+```text
+后端接口是正常的，主要是浏览器对中文 JSON 的编码显示差异。
+```
+
+当前阶段不需要深挖。
+
+后面我们改成返回 HTML 页面，或者明确响应编码后，这类问题会自然解决。
+
+### 6. 今天涉及的文件
+
+```text
+app/main.py
+app/routers/files.py
+docs/learning-notes.md
+```
+
+另外：
+
+```text
+app/db/models.py
+```
+
+是之前数据库学习时创建的文件，目前先保留，但暂时不继续数据库。
+
+### 7. 今天结束前的 Git 操作
+
+建议提交：
+
+```bash
+git add app/main.py app/routers/files.py docs/learning-notes.md
+git commit -m "添加文件管理入口"
+git push
+```
+
+如果要暂时保留数据库草稿文件但不提交，可以不要把 `app/db/models.py` 加入本次提交。

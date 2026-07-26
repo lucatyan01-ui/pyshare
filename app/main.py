@@ -1,7 +1,9 @@
 from fastapi import FastAPI  # 从 fastapi 库中导入 FastAPI 类，用它创建 Web 应用
 
 from app.core.config import settings  # 导入项目配置对象，读取项目名、调试开关等配置
-from app.routers import health  # 导入健康检查路由模块
+# 旧写法：只导入健康检查路由模块。
+# from app.routers import health  # 导入健康检查路由模块
+from app.routers import files, health  # 导入文件管理路由模块和健康检查路由模块
 
 
 app = FastAPI(  # 创建一个 FastAPI 应用对象，并把它保存到变量 app 里
@@ -10,6 +12,7 @@ app = FastAPI(  # 创建一个 FastAPI 应用对象，并把它保存到变量 a
 )
 
 
+app.include_router(files.router)  # 把文件管理路由挂载到 FastAPI 主应用上
 app.include_router(health.router)  # 把健康检查路由挂载到 FastAPI 主应用上
 
 
