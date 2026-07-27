@@ -4,6 +4,9 @@ fastapi==0.116.1
 # ASGI 服务器，用来运行 FastAPI 项目
 uvicorn[standard]==0.35.0
 
+# HTML 模板引擎，用来渲染页面
+jinja2==3.1.6
+
 # 从 .env 读取配置，并提供类型校验
 pydantic-settings==2.10.1
 

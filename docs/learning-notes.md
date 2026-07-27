@@ -1619,3 +1619,188 @@ git push
 ```
 
 如果要暂时保留数据库草稿文件但不提交，可以不要把 `app/db/models.py` 加入本次提交。
+
+## 17. 让 /files 返回 HTML 页面
+
+今天把 `/files` 从返回 JSON 升级成返回真正的 HTML 页面。
+
+上一版返回：
+
+```json
+{"title":"文件管理页面"}
+```
+
+今天升级后，浏览器能看到页面：
+
+```text
+PyShare 文件管理
+这里将显示上传、下载和删除文件的功能。
+```
+
+### 1. 新建模板文件
+
+今天新建：
+
+```text
+app/templates/files.html
+```
+
+完整内容：
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <title>PyShare 文件管理</title>
+    </head>
+    <body>
+        <h1>PyShare 文件管理</h1>
+        <p>这里将显示上传、下载和删除文件的功能。</p>
+    </body>
+</html>
+```
+
+其中：
+
+```html
+<meta charset="utf-8">
+```
+
+表示告诉浏览器用 UTF-8 编码显示页面，可以避免中文乱码。
+
+### 2. Jinja2Templates
+
+在 `app/routers/files.py` 中新增：
+
+```python
+from fastapi import APIRouter, Request  # 导入 APIRouter 和 Request，Request 用来把请求信息传给模板
+from fastapi.templating import Jinja2Templates  # 导入 Jinja2Templates，用来返回 HTML 模板页面
+```
+
+然后创建模板工具对象：
+
+```python
+templates = Jinja2Templates(directory="app/templates")  # 指定 HTML 模板文件所在目录
+```
+
+一句话理解：
+
+```text
+告诉 FastAPI：以后 HTML 模板去 app/templates 目录里找。
+```
+
+### 3. TemplateResponse
+
+今天把 `files_page()` 改成：
+
+```python
+@router.get("/files")  # 注册一个 GET 接口，访问地址是 /files
+def files_page(request: Request):  # 定义文件管理页面处理函数，并接收浏览器请求对象
+    return templates.TemplateResponse(  # 返回 HTML 模板响应
+        "files.html",  # 指定要渲染的模板文件名
+        {"request": request},  # 把 request 传给模板，这是 FastAPI 模板要求的
+    )
+```
+
+含义：
+
+```text
+访问 /files 时，FastAPI 去 app/templates 目录中找到 files.html，并返回给浏览器。
+```
+
+这里的：
+
+```python
+{"request": request}
+```
+
+是 FastAPI 使用 Jinja2 模板时要求传入的内容。
+
+### 4. jinja2 依赖
+
+第一次运行时报错：
+
+```text
+AssertionError: jinja2 must be installed to use Jinja2Templates
+```
+
+原因：
+
+```text
+项目使用了 Jinja2Templates，但虚拟环境里还没有安装 jinja2。
+```
+
+解决：
+
+```bash
+pip install jinja2
+```
+
+并把依赖写进 `requirements.txt`：
+
+```text
+jinja2==3.1.6
+```
+
+这样以后换电脑或部署服务器时，执行：
+
+```bash
+pip install -r requirements.txt
+```
+
+就会自动安装 `jinja2`。
+
+### 5. 今天验证结果
+
+运行：
+
+```bash
+uvicorn app.main:app --reload
+```
+
+访问：
+
+```text
+http://127.0.0.1:8000/files
+```
+
+浏览器成功显示 HTML 页面：
+
+```text
+PyShare 文件管理
+```
+
+说明：
+
+- `/files` 路由正常。
+- `Jinja2Templates` 正常。
+- `files.html` 模板正常。
+- 中文编码正常。
+
+### 6. 今天结束前的 Git 操作
+
+今天涉及的文件：
+
+```text
+app/routers/files.py
+app/templates/files.html
+requirements.txt
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py app/templates/files.html requirements.txt docs/learning-notes.md
+git commit -m "让文件管理入口返回 HTML 页面"
+git push
+```
+
+注意：
+
+```text
+app/db/models.py
+```
+
+仍然是之前数据库草稿，暂时保留但不提交。
