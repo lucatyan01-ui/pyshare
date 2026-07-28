@@ -7,5 +7,13 @@
     <body>
         <h1>PyShare 文件管理</h1>
         <p>这里将显示上传、下载和删除文件的功能。</p>
+
+        <!-- 文件上传表单：提交到后端 /files/upload 接口 -->
+        <form method="post" action="/files/upload" enctype="multipart/form-data">
+            <!-- 文件选择框：name 是后端接收文件时使用的字段名 -->
+            <input type="file" name="upload_file">
+            <!-- 提交按钮：点击后把选择的文件发送给后端 -->
+            <button type="submit">上传</button>
+        </form>
     </body>
 </html>

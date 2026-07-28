@@ -1804,3 +1804,206 @@ app/db/models.py
 ```
 
 仍然是之前数据库草稿，暂时保留但不提交。
+
+## 18. 在 /files 页面添加上传表单
+
+今天继续按“迭代式 + 增量式开发”的思路推进。
+
+本轮小目标：
+
+```text
+在 /files 页面上看到文件选择框和上传按钮。
+```
+
+今天只做前端表单，不做真正上传。
+
+真正接收文件的后端接口：
+
+```text
+POST /files/upload
+```
+
+下一轮再实现。
+
+### 1. 修改 files.html
+
+修改文件：
+
+```text
+app/templates/files.html
+```
+
+在说明文字下面加入：
+
+```html
+<!-- 文件上传表单：提交到后端 /files/upload 接口 -->
+<form method="post" action="/files/upload" enctype="multipart/form-data">
+    <!-- 文件选择框：name 是后端接收文件时使用的字段名 -->
+    <input type="file" name="upload_file">
+    <!-- 提交按钮：点击后把选择的文件发送给后端 -->
+    <button type="submit">上传</button>
+</form>
+```
+
+### 2. form 表单
+
+`form` 表示 HTML 表单。
+
+可以理解成：
+
+```text
+把用户输入或选择的数据打包后，提交给后端。
+```
+
+本项目里，表单负责把用户选择的文件提交给 FastAPI。
+
+### 3. method="post"
+
+代码：
+
+```html
+method="post"
+```
+
+意思是：
+
+```text
+用 POST 请求提交数据。
+```
+
+一般来说：
+
+```text
+GET   用来获取数据
+POST  用来提交数据
+```
+
+上传文件属于提交数据，所以这里用 `POST`。
+
+### 4. action="/files/upload"
+
+代码：
+
+```html
+action="/files/upload"
+```
+
+意思是：
+
+```text
+点击上传按钮后，把表单数据提交到 /files/upload 这个后端地址。
+```
+
+目前这个后端接口还没有实现。
+
+所以现在如果点击上传，可能会出现 `404 Not Found` 或 `405 Method Not Allowed`。
+
+这是正常的，因为今天只完成页面表单。
+
+### 5. enctype="multipart/form-data"
+
+代码：
+
+```html
+enctype="multipart/form-data"
+```
+
+这是上传文件时必须写的重要属性。
+
+一句话理解：
+
+```text
+告诉浏览器：这个表单里有文件，请用适合文件上传的格式提交。
+```
+
+如果不写这个，后端通常无法正确接收文件内容。
+
+### 6. input type="file"
+
+代码：
+
+```html
+<input type="file" name="upload_file">
+```
+
+含义：
+
+```text
+type="file"      显示文件选择框
+name="upload_file"  后端接收文件时使用的字段名
+```
+
+后面 FastAPI 接收文件时，会使用同样的名字：
+
+```python
+upload_file
+```
+
+前端 `name` 和后端参数名要对应。
+
+### 7. button type="submit"
+
+代码：
+
+```html
+<button type="submit">上传</button>
+```
+
+含义：
+
+```text
+点击按钮后，提交整个表单。
+```
+
+### 8. 今天验证结果
+
+运行：
+
+```bash
+uvicorn app.main:app --reload
+```
+
+访问：
+
+```text
+http://127.0.0.1:8000/files
+```
+
+页面成功显示：
+
+```text
+PyShare 文件管理
+选取文件
+上传
+```
+
+说明：
+
+```text
+/files 页面已经成功显示上传表单。
+```
+
+### 9. 今天结束前的 Git 操作
+
+今天涉及文件：
+
+```text
+app/templates/files.html
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/templates/files.html docs/learning-notes.md
+git commit -m "添加文件上传表单"
+git push
+```
+
+注意：
+
+```text
+app/db/models.py
+```
+
+仍然是数据库草稿，暂时不提交。
