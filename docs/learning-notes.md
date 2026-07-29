@@ -2007,3 +2007,260 @@ app/db/models.py
 ```
 
 仍然是数据库草稿，暂时不提交。
+
+## 19. 接收上传文件并保存到本地 uploads 目录
+
+今天实现了真正的文件上传保存。
+
+本轮小目标：
+
+```text
+选择文件 -> 点击上传 -> FastAPI 接收文件 -> 保存到 uploads/ 目录
+```
+
+### 1. 创建 uploads 目录
+
+在项目根目录创建：
+
+```bash
+mkdir -p uploads
+```
+
+完整路径：
+
+```text
+/Users/lucatyan/work/python/pyshare/uploads
+```
+
+这个目录用来临时保存用户上传的文件。
+
+`.gitignore` 中已经有：
+
+```gitignore
+uploads/
+```
+
+所以上传的真实文件不会被提交到 GitHub。
+
+这是正确的，因为用户上传文件属于运行数据，不属于项目源代码。
+
+### 2. 导入 Path
+
+在 `app/routers/files.py` 中新增：
+
+```python
+from pathlib import Path  # 导入 Path，用来处理文件和目录路径
+```
+
+`Path` 来自 Python 标准库 `pathlib`。
+
+一句话理解：
+
+```text
+Path = Python 中更适合处理文件路径的工具。
+```
+
+例如：
+
+```python
+upload_dir = Path("uploads")
+```
+
+表示项目根目录下的 `uploads` 目录。
+
+路径拼接：
+
+```python
+file_path = upload_dir / upload_file.filename
+```
+
+这里的 `/` 不是除法，而是 `Path` 提供的路径拼接写法。
+
+例如：
+
+```text
+uploads/a.txt
+```
+
+### 3. 上传目录变量
+
+在 `files.py` 中新增：
+
+```python
+upload_dir = Path("uploads")  # 指定上传文件保存目录
+```
+
+含义：
+
+```text
+把 uploads 目录保存到 upload_dir 变量中，后面保存文件时使用。
+```
+
+### 4. 接收上传文件
+
+上传接口：
+
+```python
+@router.post("/files/upload")  # 注册一个 POST 接口，接收文件上传表单
+def upload_file(upload_file: UploadFile = File(...)):  # 接收表单中 name="upload_file" 的文件
+```
+
+对应 HTML 表单：
+
+```html
+<input type="file" name="upload_file">
+```
+
+关键点：
+
+```text
+前端 name="upload_file"
+后端参数 upload_file
+```
+
+这两个名字要对应。
+
+`UploadFile` 表示 FastAPI 接收到的上传文件对象。
+
+`File(...)` 告诉 FastAPI：
+
+```text
+这个参数来自 multipart/form-data 表单里的文件字段。
+```
+
+### 5. 保存文件代码
+
+当前保存逻辑：
+
+```python
+@router.post("/files/upload")  # 注册一个 POST 接口，接收文件上传表单
+def upload_file(upload_file: UploadFile = File(...)):  # 接收表单中 name="upload_file" 的文件
+    file_path = upload_dir / upload_file.filename  # 拼出文件保存路径，例如 uploads/a.txt
+    content = upload_file.file.read()  # 读取上传文件的全部内容
+    file_path.write_bytes(content)  # 把文件内容写入服务器本地磁盘
+    return {"filename": upload_file.filename, "saved_to": str(file_path)}  # 返回保存结果
+```
+
+逐行理解：
+
+```python
+file_path = upload_dir / upload_file.filename
+```
+
+拼出保存路径。
+
+例如上传：
+
+```text
+python_file_share_50h_plan.md
+```
+
+保存路径就是：
+
+```text
+uploads/python_file_share_50h_plan.md
+```
+
+```python
+content = upload_file.file.read()
+```
+
+读取上传文件的全部内容。
+
+```python
+file_path.write_bytes(content)
+```
+
+把读取到的内容写入本地磁盘。
+
+```python
+return {"filename": upload_file.filename, "saved_to": str(file_path)}
+```
+
+返回文件名和保存路径，方便验证。
+
+### 6. 今天验证结果
+
+上传文件：
+
+```text
+python_file_share_50h_plan.md
+```
+
+浏览器返回：
+
+```json
+{
+  "filename": "python_file_share_50h_plan.md",
+  "saved_to": "uploads/python_file_share_50h_plan.md"
+}
+```
+
+终端执行：
+
+```bash
+ls uploads
+```
+
+看到：
+
+```text
+python_file_share_50h_plan.md
+```
+
+说明：
+
+```text
+文件已经真正保存到 uploads/ 目录。
+```
+
+### 7. 当前版本的限制
+
+当前实现是学习版，功能已经跑通，但还不够安全和完整。
+
+后面需要改进：
+
+- 文件名安全处理，避免路径穿越。
+- 文件重名处理，避免覆盖旧文件。
+- 大文件不能一次性全部读入内存。
+- 上传成功后跳回 /files 页面。
+- 在 /files 页面显示文件列表。
+- 后续再接入数据库记录文件信息。
+
+### 8. 下次建议
+
+下一步建议：
+
+```text
+在 /files 页面显示 uploads/ 目录里的文件列表。
+```
+
+这样上传后就能在页面看到已有文件。
+
+### 9. 今天结束前的 Git 操作
+
+今天涉及文件：
+
+```text
+app/routers/files.py
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py docs/learning-notes.md
+git commit -m "保存上传文件到本地目录"
+git push
+```
+
+注意不要提交：
+
+```text
+uploads/
+app/db/models.py
+```
+
+`uploads/` 是运行数据，已被 `.gitignore` 忽略。
+
+`app/db/models.py` 仍然是数据库草稿，暂时不提交。
