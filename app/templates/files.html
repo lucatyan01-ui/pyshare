@@ -15,5 +15,15 @@
             <!-- 提交按钮：点击后把选择的文件发送给后端 -->
             <button type="submit">上传</button>
         </form>
+
+        <h2>已上传文件</h2>
+
+        <!-- 文件列表：files 是后端传给模板的文件名列表 -->
+        <ul>
+            {% for file in files %}
+                <!-- 每循环一次，就显示一个文件名 -->
+                <li>{{ file }}</li>
+            {% endfor %}
+        </ul>
     </body>
 </html>

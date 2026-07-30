@@ -2264,3 +2264,292 @@ app/db/models.py
 `uploads/` 是运行数据，已被 `.gitignore` 忽略。
 
 `app/db/models.py` 仍然是数据库草稿，暂时不提交。
+
+## 20. 在 /files 页面显示已上传文件列表
+
+今天实现了文件列表显示。
+
+本轮小目标：
+
+```text
+/files 页面能显示 uploads/ 目录中的文件名。
+```
+
+### 1. 后端读取 uploads 目录
+
+在 `app/routers/files.py` 的 `files_page()` 中新增：
+
+```python
+files = [path.name for path in upload_dir.iterdir() if path.is_file()]  # 读取 uploads 目录中的文件名列表
+```
+
+这句是 Python 列表推导式。
+
+普通写法等价于：
+
+```python
+files = []
+
+for path in upload_dir.iterdir():
+    if path.is_file():
+        files.append(path.name)
+```
+
+含义：
+
+```text
+遍历 uploads 目录；
+只保留文件，不要文件夹；
+取每个文件的文件名；
+组成一个列表。
+```
+
+### 2. for / in / if 语法
+
+普通循环：
+
+```python
+for path in upload_dir.iterdir():
+    ...
+```
+
+含义：
+
+```text
+从 upload_dir.iterdir() 里一个一个取东西；
+每取出一个，临时叫 path。
+```
+
+条件判断：
+
+```python
+if path.is_file():
+    ...
+```
+
+含义：
+
+```text
+如果 path 是文件，就执行缩进里的代码。
+```
+
+列表推导式结构：
+
+```python
+[要收集的结果 for 临时变量 in 数据来源 if 条件]
+```
+
+对应当前代码：
+
+```python
+[path.name for path in upload_dir.iterdir() if path.is_file()]
+```
+
+拆开：
+
+```text
+要收集的结果：path.name
+临时变量：path
+数据来源：upload_dir.iterdir()
+条件：path.is_file()
+```
+
+### 3. path.name
+
+`path.name` 的作用：
+
+```text
+从一个路径中取出最后的文件名或目录名。
+```
+
+例如：
+
+```python
+Path("uploads/a.txt").name
+```
+
+结果：
+
+```text
+a.txt
+```
+
+在本项目中，页面只需要显示文件名，不需要显示完整路径：
+
+```text
+uploads/python_file_share_50h_plan.md
+```
+
+所以使用：
+
+```python
+path.name
+```
+
+得到：
+
+```text
+python_file_share_50h_plan.md
+```
+
+### 4. 把 files 传给模板
+
+原来：
+
+```python
+{"request": request}
+```
+
+现在：
+
+```python
+{"request": request, "files": files}
+```
+
+含义：
+
+```text
+把 request 和文件名列表 files 一起传给 files.html。
+```
+
+### 5. Jinja2 是什么
+
+Jinja2 是 Python 模板引擎。
+
+一句话理解：
+
+```text
+Jinja2 = 把 HTML 模板 + 后端数据 合成最终网页的工具。
+```
+
+后端数据：
+
+```python
+files = ["a.txt", "b.png"]
+```
+
+模板：
+
+```html
+{% for file in files %}
+    <li>{{ file }}</li>
+{% endfor %}
+```
+
+最终生成：
+
+```html
+<li>a.txt</li>
+<li>b.png</li>
+```
+
+浏览器最终看到的是生成后的 HTML，不是 `{% for %}` 这些模板语法。
+
+### 6. Jinja2 的两种常用语法
+
+输出变量：
+
+```html
+{{ file }}
+```
+
+含义：
+
+```text
+把 file 的值显示到 HTML 页面。
+```
+
+控制语句：
+
+```html
+{% for file in files %}
+{% endfor %}
+```
+
+含义：
+
+```text
+循环 files 列表。
+```
+
+注意：
+
+```text
+{% ... %} 是 Jinja2 模板语法，不是 HTML 原生语法，也不是完整 Python 代码。
+```
+
+它像 Python，但属于模板引擎语法。
+
+### 7. 修改 files.html
+
+在 `app/templates/files.html` 中新增：
+
+```html
+<h2>已上传文件</h2>
+
+<!-- 文件列表：files 是后端传给模板的文件名列表 -->
+<ul>
+    {% for file in files %}
+        <!-- 每循环一次，就显示一个文件名 -->
+        <li>{{ file }}</li>
+    {% endfor %}
+</ul>
+```
+
+### 8. 今天验证结果
+
+访问：
+
+```text
+http://127.0.0.1:8000/files
+```
+
+页面显示：
+
+```text
+已上传文件
+- python_file_share_50h_plan.md
+```
+
+说明：
+
+```text
+后端成功读取 uploads 目录；
+模板成功循环显示文件名；
+/files 页面已经能展示已上传文件列表。
+```
+
+### 9. 下次建议
+
+下一步建议：
+
+```text
+上传成功后自动跳回 /files 页面，而不是显示 JSON。
+```
+
+这样上传体验会更像真实网站。
+
+### 10. 今天结束前的 Git 操作
+
+今天涉及文件：
+
+```text
+app/routers/files.py
+app/templates/files.html
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py app/templates/files.html docs/learning-notes.md
+git commit -m "显示已上传文件列表"
+git push
+```
+
+注意不要提交：
+
+```text
+app/db/models.py
+uploads/
+```

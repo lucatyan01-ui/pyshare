@@ -16,9 +16,10 @@ upload_dir = Path("uploads")  # 指定上传文件保存目录
 
 @router.get("/files")  # 注册一个 GET 接口，访问地址是 /files
 def files_page(request: Request):  # 定义文件管理页面处理函数，并接收浏览器请求对象
+    files = [path.name for path in upload_dir.iterdir() if path.is_file()]  # 读取 uploads 目录中的文件名列表
     return templates.TemplateResponse(  # 返回 HTML 模板响应
         "files.html",  # 指定要渲染的模板文件名
-        {"request": request},  # 把 request 传给模板，这是 FastAPI 模板要求的
+        {"request": request, "files": files},  # 把 request 和文件列表传给模板
     )
 
 
