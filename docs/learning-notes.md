@@ -2553,3 +2553,180 @@ git push
 app/db/models.py
 uploads/
 ```
+
+## 二十一、上传成功后自动回到文件管理页面
+
+### 1. 本次小目标
+
+之前上传文件成功后，浏览器会停在 JSON 页面，例如：
+
+```json
+{"filename": "a.txt", "saved_to": "uploads/a.txt"}
+```
+
+这说明后端保存文件成功了，但用户体验不像真实网站。
+
+本次目标：
+
+```text
+选择文件 -> 点击上传 -> 后端保存文件 -> 自动回到 /files 页面 -> 页面显示最新文件列表
+```
+
+### 2. 导入 RedirectResponse
+
+在 `app/routers/files.py` 中新增：
+
+```python
+from fastapi.responses import RedirectResponse  # 导入重定向响应，用来让上传成功后跳回文件列表页面
+```
+
+说明：
+
+```text
+RedirectResponse 是“重定向响应”。
+它不是返回 JSON，而是告诉浏览器跳转到另一个地址。
+```
+
+### 3. 保留旧代码，改成重定向
+
+旧写法：
+
+```python
+return {"filename": upload_file.filename, "saved_to": str(file_path)}  # 返回保存结果
+```
+
+新写法：
+
+```python
+# 旧写法：上传成功后返回 JSON 数据，浏览器页面会停在 JSON 结果页。
+# return {"filename": upload_file.filename, "saved_to": str(file_path)}  # 返回保存结果
+return RedirectResponse(url="/files", status_code=303)  # 上传成功后重定向回文件列表页面
+```
+
+注意：
+
+```text
+函数执行到 return 就结束。
+如果旧 return 不注释掉，新的 RedirectResponse 永远不会执行。
+```
+
+### 4. 303 是什么意思
+
+```python
+status_code=303
+```
+
+303 是 HTTP 状态码，完整含义是：
+
+```text
+303 See Other
+```
+
+在这个项目里可以理解成：
+
+```text
+你刚才用 POST 提交了上传文件；
+服务器已经保存好了；
+现在请浏览器改用 GET 请求访问 /files 页面。
+```
+
+这个写法适合表单提交成功后的跳转，也能避免刷新页面时重复提交表单。
+
+### 5. 修复空文件上传问题
+
+测试时出现过错误：
+
+```text
+IsADirectoryError: [Errno 21] Is a directory: 'uploads'
+```
+
+原因：
+
+```text
+没有选择文件就提交；
+upload_file.filename 为空；
+file_path = upload_dir / upload_file.filename 实际变成了 uploads；
+程序试图把文件内容写入 uploads 这个目录，于是报错。
+```
+
+前端修复：
+
+```html
+<!-- 文件选择框：name 是后端接收文件时使用的字段名，required 表示必须选择文件才能提交 -->
+<input type="file" name="upload_file" required>
+```
+
+说明：
+
+```text
+required 是 HTML 自带属性。
+它表示这个输入框必填。
+没有选择文件时，浏览器会拦住表单提交。
+```
+
+### 6. 本次验证结果
+
+访问：
+
+```text
+http://127.0.0.1:8000/files
+```
+
+验证结果：
+
+```text
+不选择文件时，浏览器提示必须选择文件；
+选择文件上传后，页面自动回到 /files；
+已上传文件列表能看到新文件名。
+```
+
+本次已实现的完整流程：
+
+```text
+浏览器选择文件
+-> 表单 POST 到 /files/upload
+-> FastAPI 接收 UploadFile
+-> 保存到本地 uploads 目录
+-> RedirectResponse 返回 303
+-> 浏览器 GET /files
+-> Jinja2 模板显示最新文件列表
+```
+
+### 7. 下次建议
+
+下一步建议：
+
+```text
+给文件名加下载链接，实现点击文件名下载文件。
+```
+
+这样项目的核心功能会从“上传 + 查看列表”推进到：
+
+```text
+上传 + 查看列表 + 下载
+```
+
+### 8. 本次结束前的 Git 操作
+
+本次涉及文件：
+
+```text
+app/routers/files.py
+app/templates/files.html
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py app/templates/files.html docs/learning-notes.md
+git commit -m "上传后重定向回文件列表"
+git push
+```
+
+注意继续不要提交：
+
+```text
+app/db/models.py
+uploads/
+```

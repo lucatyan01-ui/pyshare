@@ -2,6 +2,7 @@ from pathlib import Path  # 导入 Path，用来处理文件和目录路径
 
 # from fastapi import APIRouter  # 导入 APIRouter，用来创建文件管理相关路由
 from fastapi import APIRouter, File, Request, UploadFile  # 导入路由、文件上传和请求相关工具
+from fastapi.responses import RedirectResponse  # 导入重定向响应，用来让上传成功后跳回文件列表页面
 from fastapi.templating import Jinja2Templates  # 导入 Jinja2Templates，用来返回 HTML 模板页面
 
 
@@ -28,4 +29,6 @@ def upload_file(upload_file: UploadFile = File(...)):  # 接收表单中 name="u
     file_path = upload_dir / upload_file.filename  # 拼出文件保存路径，例如 uploads/a.txt
     content = upload_file.file.read()  # 读取上传文件的全部内容
     file_path.write_bytes(content)  # 把文件内容写入服务器本地磁盘
-    return {"filename": upload_file.filename, "saved_to": str(file_path)}  # 返回保存结果
+    # 旧写法：上传成功后返回 JSON 数据，浏览器页面会停在 JSON 结果页。
+    # return {"filename": upload_file.filename, "saved_to": str(file_path)}  # 返回保存结果
+    return RedirectResponse(url="/files", status_code=303)  # 上传成功后重定向回文件列表页面

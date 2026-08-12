@@ -10,8 +10,8 @@
 
         <!-- 文件上传表单：提交到后端 /files/upload 接口 -->
         <form method="post" action="/files/upload" enctype="multipart/form-data">
-            <!-- 文件选择框：name 是后端接收文件时使用的字段名 -->
-            <input type="file" name="upload_file">
+            <!-- 文件选择框：name 是后端接收文件时使用的字段名，required 表示必须选择文件才能提交 -->
+            <input type="file" name="upload_file" required>
             <!-- 提交按钮：点击后把选择的文件发送给后端 -->
             <button type="submit">上传</button>
         </form>
