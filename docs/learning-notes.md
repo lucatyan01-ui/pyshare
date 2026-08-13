@@ -2730,3 +2730,204 @@ git push
 app/db/models.py
 uploads/
 ```
+
+## 二十二、实现文件下载功能
+
+### 1. 本次小目标
+
+上一阶段已经实现：
+
+```text
+上传文件
+显示文件列表
+```
+
+本次目标：
+
+```text
+点击文件名 -> 浏览器下载对应文件
+```
+
+这样项目核心功能变成：
+
+```text
+上传 + 查看列表 + 下载
+```
+
+### 2. 导入 FileResponse
+
+在 `app/routers/files.py` 中修改导入：
+
+```python
+from fastapi.responses import FileResponse, RedirectResponse  # 导入文件下载响应和重定向响应
+```
+
+说明：
+
+```text
+FileResponse 用来把服务器上的文件返回给浏览器。
+RedirectResponse 用来让浏览器跳转页面。
+```
+
+### 3. 新增下载接口
+
+在 `app/routers/files.py` 中新增：
+
+```python
+@router.get("/files/download/{filename}")  # 注册一个 GET 接口，用来下载指定文件
+def download_file(filename: str):  # filename 来自网址中的 {filename}，类型是字符串
+    file_path = upload_dir / filename  # 拼出要下载的文件路径，例如 uploads/a.txt
+    return FileResponse(path=file_path, filename=filename)  # 把服务器上的文件返回给浏览器下载
+```
+
+说明：
+
+```text
+/files/download/{filename} 中的 {filename} 是路径参数。
+浏览器访问 /files/download/a.txt 时，FastAPI 会把 a.txt 传给 filename。
+```
+
+执行过程：
+
+```text
+浏览器请求 /files/download/a.txt
+-> FastAPI 匹配 /files/download/{filename}
+-> filename = "a.txt"
+-> file_path = uploads/a.txt
+-> FileResponse 返回文件内容
+```
+
+### 4. 把文件名变成下载链接
+
+在 `app/templates/files.html` 中，把原来的普通文件名：
+
+```html
+<li>{{ file }}</li>
+```
+
+改成：
+
+```html
+<!-- 每循环一次，就把一个文件名显示成下载链接 -->
+<li>
+    <!-- href 是点击后访问的地址，{{ file }} 会被 Jinja2 替换成真实文件名 -->
+    <a href="/files/download/{{ file }}">{{ file }}</a>
+</li>
+```
+
+假设文件名是：
+
+```text
+a.txt
+```
+
+Jinja2 最终生成：
+
+```html
+<a href="/files/download/a.txt">a.txt</a>
+```
+
+### 5. 为什么点击文件名会触发 GET 请求
+
+因为 HTML 中：
+
+```html
+<a href="/files/download/a.txt">a.txt</a>
+```
+
+`<a>` 是超链接标签，`href` 是点击后访问的地址。
+
+浏览器规则：
+
+```text
+点击普通链接 <a href="...">，默认发起 GET 请求。
+```
+
+所以点击文件名会触发：
+
+```text
+GET /files/download/a.txt
+```
+
+对比：
+
+```text
+普通链接 a 标签 -> GET 请求
+表单 method="post" -> POST 请求
+```
+
+### 6. 下载功能完整原理
+
+完整流程：
+
+```text
+Jinja2 把文件名渲染成链接
+-> 用户点击文件名
+-> 浏览器 GET /files/download/文件名
+-> FastAPI 从 URL 中取出 filename
+-> 后端拼出 uploads/文件名
+-> FileResponse 返回文件
+-> 浏览器下载文件
+```
+
+关键理解：
+
+```text
+浏览器不是直接读取服务器 uploads 文件夹。
+浏览器只能请求后端接口。
+后端接口读取服务器文件，再把文件内容返回给浏览器。
+```
+
+### 7. 本次验证结果
+
+访问：
+
+```text
+http://127.0.0.1:8000/files
+```
+
+验证：
+
+```text
+页面上的文件名已经变成可点击链接；
+点击文件名后，浏览器可以下载对应文件。
+```
+
+### 8. 下次建议
+
+下一步建议：
+
+```text
+增加删除文件功能。
+```
+
+这样核心功能会继续推进到：
+
+```text
+上传 + 查看列表 + 下载 + 删除
+```
+
+### 9. 本次结束前的 Git 操作
+
+本次涉及文件：
+
+```text
+app/routers/files.py
+app/templates/files.html
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py app/templates/files.html docs/learning-notes.md
+git commit -m "添加文件下载功能"
+git push
+```
+
+注意继续不要提交：
+
+```text
+app/db/models.py
+uploads/
+```

@@ -2,7 +2,7 @@ from pathlib import Path  # 导入 Path，用来处理文件和目录路径
 
 # from fastapi import APIRouter  # 导入 APIRouter，用来创建文件管理相关路由
 from fastapi import APIRouter, File, Request, UploadFile  # 导入路由、文件上传和请求相关工具
-from fastapi.responses import RedirectResponse  # 导入重定向响应，用来让上传成功后跳回文件列表页面
+from fastapi.responses import FileResponse, RedirectResponse  # 导入文件下载响应和重定向响应
 from fastapi.templating import Jinja2Templates  # 导入 Jinja2Templates，用来返回 HTML 模板页面
 
 
@@ -22,6 +22,11 @@ def files_page(request: Request):  # 定义文件管理页面处理函数，并�
         "files.html",  # 指定要渲染的模板文件名
         {"request": request, "files": files},  # 把 request 和文件列表传给模板
     )
+
+@router.get("/files/download/{filename}")  # 注册一个 GET 接口，用来下载指定文件
+def download_file(filename: str):  # filename 来自网址中的 {filename}，类型是字符串
+    file_path = upload_dir / filename  # 拼出要下载的文件路径，例如 uploads/a.txt
+    return FileResponse(path=file_path, filename=filename)  # 把服务器上的文件返回给浏览器下载
 
 
 @router.post("/files/upload")  # 注册一个 POST 接口，接收文件上传表单

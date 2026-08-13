@@ -21,8 +21,11 @@
         <!-- 文件列表：files 是后端传给模板的文件名列表 -->
         <ul>
             {% for file in files %}
-                <!-- 每循环一次，就显示一个文件名 -->
-                <li>{{ file }}</li>
+                <!-- 每循环一次，就把一个文件名显示成下载链接 -->
+                <li>
+                    <!-- href 是点击后访问的地址，{{ file }} 会被 Jinja2 替换成真实文件名 -->
+                    <a href="/files/download/{{ file }}">{{ file }}</a>
+                </li>
             {% endfor %}
         </ul>
     </body>
