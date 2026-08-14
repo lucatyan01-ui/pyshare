@@ -25,6 +25,11 @@
                 <li>
                     <!-- href 是点击后访问的地址，{{ file }} 会被 Jinja2 替换成真实文件名 -->
                     <a href="/files/download/{{ file }}">{{ file }}</a>
+
+                    <!-- 删除表单：点击删除按钮后，向后端删除接口发送 POST 请求 -->
+                    <form method="post" action="/files/delete/{{ file }}" style="display: inline;">
+                        <button type="submit">删除</button>
+                    </form>
                 </li>
             {% endfor %}
         </ul>

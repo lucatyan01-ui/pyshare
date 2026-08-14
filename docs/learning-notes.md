@@ -2731,6 +2731,218 @@ app/db/models.py
 uploads/
 ```
 
+## 二十三、实现文件删除功能
+
+### 1. 本次小目标
+
+上一阶段已经实现：
+
+```text
+上传 + 查看列表 + 下载
+```
+
+本次目标：
+
+```text
+每个文件后面显示“删除”按钮；
+点击删除 -> 后端删除 uploads 目录中的对应文件 -> 自动回到 /files 页面。
+```
+
+实现后，第一版本地文件管理核心功能变成：
+
+```text
+上传 + 查看列表 + 下载 + 删除
+```
+
+### 2. 新增删除接口
+
+在 `app/routers/files.py` 中新增：
+
+```python
+@router.post("/files/delete/{filename}")  # 注册一个 POST 接口，用来删除指定文件
+def delete_file(filename: str):  # filename 来自网址中的 {filename}，类型是字符串
+    file_path = upload_dir / filename  # 拼出要删除的文件路径，例如 uploads/a.txt
+    if file_path.is_file():  # 判断这个路径确实是一个文件
+        file_path.unlink()  # 删除这个文件
+    return RedirectResponse(url="/files", status_code=303)  # 删除完成后重定向回文件列表页面
+```
+
+说明：
+
+```text
+/files/delete/{filename} 中的 {filename} 是路径参数。
+浏览器提交 /files/delete/a.txt 时，FastAPI 会把 a.txt 传给 filename。
+```
+
+### 3. 为什么删除接口用 POST
+
+下载文件时，我们用了普通链接：
+
+```html
+<a href="/files/download/a.txt">a.txt</a>
+```
+
+点击普通链接默认是 GET 请求。
+
+删除文件不适合用 GET，因为删除会改变服务器数据。
+
+规则先这样记：
+
+```text
+查看、打开、下载：通常用 GET。
+新增、上传、删除、修改：通常用 POST。
+```
+
+所以删除按钮使用表单：
+
+```html
+<form method="post" action="/files/delete/{{ file }}">
+```
+
+### 4. 在页面中添加删除按钮
+
+在 `app/templates/files.html` 中，每个文件名后面新增删除表单：
+
+```html
+<!-- 删除表单：点击删除按钮后，向后端删除接口发送 POST 请求 -->
+<form method="post" action="/files/delete/{{ file }}" style="display: inline;">
+    <button type="submit">删除</button>
+</form>
+```
+
+说明：
+
+```text
+method="post" 表示提交 POST 请求。
+action="/files/delete/{{ file }}" 表示提交到对应文件的删除接口。
+style="display: inline;" 表示表单不要独占一整行，让删除按钮和文件名显示在同一行。
+```
+
+假设文件名是：
+
+```text
+a.txt
+```
+
+Jinja2 最终生成：
+
+```html
+<form method="post" action="/files/delete/a.txt" style="display: inline;">
+    <button type="submit">删除</button>
+</form>
+```
+
+### 5. `is_file()` 和 `unlink()`
+
+```python
+if file_path.is_file():
+```
+
+含义：
+
+```text
+判断 file_path 指向的路径是否存在，并且确实是一个文件。
+```
+
+```python
+file_path.unlink()
+```
+
+含义：
+
+```text
+删除这个文件。
+```
+
+这里先判断再删除，是为了避免路径不存在或路径是目录时直接删除导致报错。
+
+### 6. 删除后为什么不怕刷新页面重复删除
+
+删除完成后返回：
+
+```python
+return RedirectResponse(url="/files", status_code=303)
+```
+
+流程：
+
+```text
+点击删除按钮
+-> POST /files/delete/文件名
+-> 后端删除文件
+-> 303 重定向
+-> 浏览器 GET /files
+-> 显示最新文件列表
+```
+
+所以删除完成后，浏览器最终停留在：
+
+```text
+GET /files
+```
+
+不是停留在删除用的 POST 接口上。
+
+这样刷新页面时，只会刷新文件列表，不会再次提交删除动作。
+
+### 7. 本次验证结果
+
+页面验证：
+
+```text
+每个文件后面出现“删除”按钮；
+点击删除后，文件从页面列表中消失。
+```
+
+服务器目录验证：
+
+```text
+uploads 目录已经为空；
+说明文件确实从服务器本地目录中删除了。
+```
+
+### 8. 后续安全提醒
+
+当前版本适合学习核心流程，但后面需要增强文件名安全校验。
+
+例如要防止用户构造特殊路径：
+
+```text
+../xxx
+```
+
+后续会学习：
+
+```text
+只允许删除 uploads 目录里的文件；
+禁止访问或删除 uploads 目录外的路径。
+```
+
+### 9. 本次结束前的 Git 操作
+
+本次涉及文件：
+
+```text
+app/routers/files.py
+app/templates/files.html
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py app/templates/files.html docs/learning-notes.md
+git commit -m "添加文件删除功能"
+git push
+```
+
+注意继续不要提交：
+
+```text
+app/db/models.py
+uploads/
+```
+
 ## 二十二、实现文件下载功能
 
 ### 1. 本次小目标

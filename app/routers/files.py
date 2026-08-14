@@ -29,6 +29,13 @@ def download_file(filename: str):  # filename 来自网址中的 {filename}，�
     return FileResponse(path=file_path, filename=filename)  # 把服务器上的文件返回给浏览器下载
 
 
+@router.post("/files/delete/{filename}")  # 注册一个 POST 接口，用来删除指定文件
+def delete_file(filename: str):  # filename 来自网址中的 {filename}，类型是字符串
+    file_path = upload_dir / filename  # 拼出要删除的文件路径，例如 uploads/a.txt
+    if file_path.is_file():  # 判断这个路径确实是一个文件
+        file_path.unlink()  # 删除这个文件
+    return RedirectResponse(url="/files", status_code=303)  # 删除完成后重定向回文件列表页面
+
 @router.post("/files/upload")  # 注册一个 POST 接口，接收文件上传表单
 def upload_file(upload_file: UploadFile = File(...)):  # 接收表单中 name="upload_file" 的文件
     file_path = upload_dir / upload_file.filename  # 拼出文件保存路径，例如 uploads/a.txt
