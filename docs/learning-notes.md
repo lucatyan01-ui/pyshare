@@ -2731,6 +2731,468 @@ app/db/models.py
 uploads/
 ```
 
+## 二十六、第一版部署到云服务器
+
+### 1. 本次目标
+
+把本地已经完成的第一版 PyShare 部署到京东云 Ubuntu 服务器。
+
+第一版功能：
+
+```text
+上传文件
+查看文件列表
+下载文件
+删除文件
+```
+
+最终公网访问地址：
+
+```text
+http://36.151.143.176/files
+```
+
+### 2. 部署整体链路
+
+本次部署链路：
+
+```text
+本地 Mac 开发
+-> git push 到 GitHub
+-> 云服务器 git clone 项目
+-> 创建 Python 虚拟环境
+-> 安装 requirements.txt 依赖
+-> uvicorn 运行 FastAPI
+-> systemd 后台管理 uvicorn
+-> Nginx 监听 80 端口并反向代理
+-> 浏览器通过公网 IP 访问
+```
+
+正式访问流程：
+
+```text
+浏览器
+-> http://36.151.143.176/files
+-> Nginx 监听 80 端口
+-> 转发到 127.0.0.1:8000
+-> uvicorn
+-> FastAPI
+-> app/routers/files.py
+```
+
+### 3. 云服务器信息
+
+本次服务器状态：
+
+```text
+云服务器：京东云
+公网 IP：36.151.143.176
+登录用户：root
+系统：Ubuntu 24.04.2 LTS
+Python：3.12.3
+Git：2.43.0
+Nginx：1.24.0
+```
+
+注意：
+
+```text
+服务器密码属于敏感信息，不应该写入代码、笔记或 GitHub。
+部署完成后建议修改 root 密码，后续最好改为 SSH key 登录。
+```
+
+### 4. 安装基础环境
+
+更新软件包索引：
+
+```bash
+apt update
+```
+
+安装部署需要的软件：
+
+```bash
+apt install -y git python3-venv nginx
+```
+
+检查版本：
+
+```bash
+git --version
+python3 --version
+nginx -v
+```
+
+### 5. 从 GitHub 拉代码
+
+进入 `/opt`：
+
+```bash
+cd /opt
+```
+
+从 GitHub 克隆项目：
+
+```bash
+git clone https://github.com/lucatyan01-ui/pyshare.git
+```
+
+项目部署目录：
+
+```text
+/opt/pyshare
+```
+
+说明：
+
+```text
+本次为了简化第一版部署，GitHub 仓库已经从 Private 改成 Public。
+公开仓库可以直接通过 HTTPS clone。
+```
+
+### 6. 创建并使用虚拟环境
+
+进入项目目录：
+
+```bash
+cd /opt/pyshare
+```
+
+创建虚拟环境：
+
+```bash
+python3 -m venv .venv
+```
+
+激活虚拟环境：
+
+```bash
+source .venv/bin/activate
+```
+
+确认虚拟环境：
+
+```bash
+which python
+which pip
+```
+
+正确结果类似：
+
+```text
+/opt/pyshare/.venv/bin/python
+/opt/pyshare/.venv/bin/pip
+```
+
+理解：
+
+```text
+.venv 是 pyshare 项目的独立 Python 环境。
+FastAPI、uvicorn、Jinja2 等依赖都安装到 .venv 里面。
+```
+
+### 7. 安装项目依赖
+
+在虚拟环境中执行：
+
+```bash
+pip install -r requirements.txt
+```
+
+作用：
+
+```text
+根据 requirements.txt 安装项目需要的第三方库。
+```
+
+本项目包括：
+
+```text
+FastAPI
+uvicorn
+Jinja2
+python-multipart
+pydantic-settings
+SQLAlchemy
+```
+
+### 8. 临时运行测试
+
+临时启动：
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+访问：
+
+```text
+http://36.151.143.176:8000/files
+```
+
+说明：
+
+```text
+--host 0.0.0.0 表示允许外部网络访问。
+--port 8000 表示服务监听 8000 端口。
+```
+
+这个方式只是临时运行：
+
+```text
+关闭 SSH 或按 Ctrl + C，服务就会停止。
+```
+
+### 9. 使用 systemd 后台运行
+
+创建服务文件：
+
+```bash
+nano /etc/systemd/system/pyshare.service
+```
+
+内容：
+
+```ini
+[Unit]
+Description=PyShare FastAPI Service
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/pyshare
+ExecStart=/opt/pyshare/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target
+```
+
+让 systemd 重新读取配置：
+
+```bash
+systemctl daemon-reload
+```
+
+启动服务：
+
+```bash
+systemctl start pyshare
+```
+
+查看状态：
+
+```bash
+systemctl status pyshare --no-pager
+```
+
+看到：
+
+```text
+Active: active (running)
+```
+
+表示服务正在后台运行。
+
+设置开机自启：
+
+```bash
+systemctl enable pyshare
+```
+
+确认开机自启：
+
+```bash
+systemctl is-enabled pyshare
+```
+
+看到：
+
+```text
+enabled
+```
+
+表示服务器重启后会自动启动 PyShare。
+
+### 10. systemd 先记住的概念
+
+```text
+systemd 是 Linux 上常见的系统服务管理器。
+systemctl 是操作 systemd 的命令。
+```
+
+本项目中：
+
+```text
+systemd 负责在后台管理 uvicorn 进程。
+```
+
+常用命令：
+
+```bash
+systemctl status pyshare --no-pager
+systemctl restart pyshare
+systemctl stop pyshare
+systemctl start pyshare
+journalctl -u pyshare -f
+```
+
+明天重点学习：
+
+```text
+systemd 是什么
+systemctl start/status/restart/enable 的区别
+pyshare.service 每一段是什么意思
+journalctl 怎么看日志
+```
+
+### 11. 使用 Nginx 反向代理
+
+创建 Nginx 配置文件：
+
+```bash
+nano /etc/nginx/sites-available/pyshare
+```
+
+内容：
+
+```nginx
+server {
+    listen 80;
+    server_name 36.151.143.176;
+
+    client_max_body_size 100M;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+启用配置：
+
+```bash
+ln -s /etc/nginx/sites-available/pyshare /etc/nginx/sites-enabled/pyshare
+```
+
+检查配置语法：
+
+```bash
+nginx -t
+```
+
+看到：
+
+```text
+syntax is ok
+test is successful
+```
+
+表示配置语法正确。
+
+重新加载 Nginx：
+
+```bash
+systemctl reload nginx
+```
+
+### 12. Nginx 和 uvicorn 的关系
+
+开发测试时可以直接访问：
+
+```text
+http://36.151.143.176:8000/files
+```
+
+正式一点的部署使用：
+
+```text
+http://36.151.143.176/files
+```
+
+关系：
+
+```text
+浏览器 -> Nginx -> uvicorn -> FastAPI
+```
+
+Nginx：
+
+```text
+监听公网 80 端口；
+接收浏览器请求；
+转发给服务器本机的 uvicorn。
+```
+
+uvicorn：
+
+```text
+运行 FastAPI；
+监听 127.0.0.1:8000；
+处理 Python Web 请求。
+```
+
+### 13. 本次部署结果
+
+最终验证成功：
+
+```text
+http://36.151.143.176/files
+```
+
+页面显示：
+
+```text
+PyShare 文件管理
+上传按钮
+已上传文件列表
+下载链接
+删除按钮
+```
+
+说明第一版已经上线。
+
+### 14. 后续待办
+
+明天优先学习：
+
+```text
+systemd / systemctl / journalctl
+```
+
+后续部署增强：
+
+```text
+修改 root 密码或改用 SSH key；
+关闭公网 8000 端口，只保留 80/443；
+配置域名；
+配置 HTTPS；
+把上传目录改成更正式的配置项；
+后续接入云对象存储。
+```
+
+### 15. 本次笔记 Git 操作
+
+建议提交：
+
+```bash
+git add docs/learning-notes.md
+git commit -m "记录第一版云服务器部署笔记"
+git push
+```
+
+注意继续不要提交：
+
+```text
+app/db/models.py
+uploads/
+```
+
 ## 二十五、部署前适配：自动创建 uploads 目录
 
 ### 1. 为什么要改
