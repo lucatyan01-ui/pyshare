@@ -13,6 +13,7 @@ templates = Jinja2Templates(directory="app/templates")  # 指定 HTML 模板文�
 
 
 upload_dir = Path("uploads")  # 指定上传文件保存目录
+upload_dir.mkdir(exist_ok=True)  # 如果 uploads 目录不存在，就自动创建
 
 
 def get_upload_file_path(filename: str):  # 根据文件名生成安全的上传文件路径

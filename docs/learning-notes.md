@@ -2731,6 +2731,119 @@ app/db/models.py
 uploads/
 ```
 
+## 二十五、部署前适配：自动创建 uploads 目录
+
+### 1. 为什么要改
+
+本地开发时，我们手动创建过：
+
+```text
+uploads/
+```
+
+但这个目录用来保存用户上传的文件，不应该提交到 GitHub。
+
+所以云服务器从 GitHub 拉代码时，默认不会有 `uploads/` 目录。
+
+如果程序直接读取：
+
+```python
+upload_dir.iterdir()
+```
+
+而 `uploads/` 不存在，就可能报错。
+
+### 2. 修改代码
+
+在 `app/routers/files.py` 中：
+
+```python
+upload_dir = Path("uploads")  # 指定上传文件保存目录
+upload_dir.mkdir(exist_ok=True)  # 如果 uploads 目录不存在，就自动创建
+```
+
+### 3. 代码解释
+
+```python
+upload_dir = Path("uploads")
+```
+
+表示上传文件保存到项目目录下的 `uploads` 文件夹。
+
+```python
+upload_dir.mkdir(exist_ok=True)
+```
+
+表示创建这个目录。
+
+```python
+exist_ok=True
+```
+
+表示：
+
+```text
+如果 uploads 不存在，就创建；
+如果 uploads 已经存在，也不要报错。
+```
+
+### 4. 部署时的理解
+
+云服务器部署后，只要程序运行，就会自动准备上传目录。
+
+部署时还要保证服务的工作目录固定，例如后面 systemd 里会配置：
+
+```text
+WorkingDirectory=/opt/pyshare
+```
+
+这样：
+
+```python
+Path("uploads")
+```
+
+就会稳定指向：
+
+```text
+/opt/pyshare/uploads
+```
+
+### 5. 本次验证结果
+
+本地已经验证：
+
+```text
+/files 页面正常；
+上传正常；
+显示列表正常；
+删除正常。
+```
+
+### 6. 本次 Git 操作
+
+本次涉及文件：
+
+```text
+app/routers/files.py
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py docs/learning-notes.md
+git commit -m "部署前自动创建上传目录"
+git push
+```
+
+注意继续不要提交：
+
+```text
+app/db/models.py
+uploads/
+```
+
 ## 二十四、第一版上线前的小整理
 
 ### 1. 本次整理目标
