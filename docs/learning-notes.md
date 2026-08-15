@@ -2731,6 +2731,230 @@ app/db/models.py
 uploads/
 ```
 
+## 二十四、第一版上线前的小整理
+
+### 1. 本次整理目标
+
+第一版本地文件管理功能已经具备：
+
+```text
+上传文件
+查看文件列表
+下载文件
+删除文件
+```
+
+本次不急着加新功能，而是做上线前的小整理：
+
+```text
+文件列表为空时显示提示；
+删除文件前弹出确认框；
+上传、下载、删除都先经过文件路径安全检查。
+```
+
+### 2. 文件列表为空时显示提示
+
+之前 `uploads` 目录为空时，页面只显示：
+
+```text
+已上传文件
+```
+
+用户不知道是页面坏了，还是确实没有文件。
+
+现在在 `app/templates/files.html` 中加入 Jinja2 判断：
+
+```html
+<!-- 如果 files 列表里有文件，就显示文件列表 -->
+{% if files %}
+    ...
+{% else %}
+    <!-- 如果 files 列表为空，就显示空状态提示 -->
+    <p>暂无上传文件</p>
+{% endif %}
+```
+
+说明：
+
+```text
+files 是后端传给模板的文件列表。
+files 有内容时，显示文件列表。
+files 是空列表时，显示“暂无上传文件”。
+```
+
+### 3. 删除前弹出确认框
+
+删除文件是危险操作，不能让用户一点击就直接删除。
+
+现在删除表单改成：
+
+```html
+<!-- 删除表单：点击删除按钮后，先弹出确认框，确认后才向后端删除接口发送 POST 请求 -->
+<form
+    method="post"
+    action="/files/delete/{{ file }}"
+    style="display: inline;"
+    onsubmit="return confirm('确定要删除这个文件吗？');"
+>
+    <button type="submit">删除</button>
+</form>
+```
+
+说明：
+
+```text
+onsubmit 表示表单提交前执行一段 JavaScript。
+confirm() 会弹出确认框。
+点“确定”返回 true，表单继续提交。
+点“取消”返回 false，表单停止提交。
+```
+
+注意：
+
+```text
+JavaScript 语句里的分号要用英文分号 ;，不要用中文分号 ；。
+```
+
+### 4. 增加文件路径安全函数
+
+在 `app/routers/files.py` 中新增：
+
+```python
+def get_upload_file_path(filename: str):  # 根据文件名生成安全的上传文件路径
+    file_path = upload_dir / filename  # 先拼出文件路径
+    resolved_upload_dir = upload_dir.resolve()  # 获取 uploads 目录的绝对路径
+    resolved_file_path = file_path.resolve()  # 获取目标文件的绝对路径
+
+    if resolved_upload_dir not in resolved_file_path.parents:  # 判断目标文件是否在 uploads 目录里面
+        return None  # 如果不在 uploads 目录里，返回 None，表示非法路径
+
+    return file_path  # 路径合法时，返回文件路径
+```
+
+现在先记住一句：
+
+```text
+get_upload_file_path() 是为了保证上传、下载、删除都只操作 uploads 目录里的文件。
+```
+
+更细的知识点先不展开：
+
+```text
+resolve()
+parents
+路径穿越
+文件名安全校验
+```
+
+等第一版项目部署上线后，再回来专门学习。
+
+### 5. 下载接口接入安全函数
+
+旧写法：
+
+```python
+file_path = upload_dir / filename
+```
+
+新写法：
+
+```python
+file_path = get_upload_file_path(filename)  # 根据文件名生成安全的文件路径
+
+if file_path is None or not file_path.is_file():  # 如果路径非法，或者文件不存在
+    return RedirectResponse(url="/files", status_code=303)  # 回到文件列表页面
+
+return FileResponse(path=file_path, filename=filename)  # 把服务器上的文件返回给浏览器下载
+```
+
+### 6. 删除接口接入安全函数
+
+```python
+file_path = get_upload_file_path(filename)  # 根据文件名生成安全的文件路径
+
+if file_path is None:  # 如果路径非法
+    return RedirectResponse(url="/files", status_code=303)  # 回到文件列表页面
+
+if file_path.is_file():  # 判断这个路径确实是一个文件
+    file_path.unlink()  # 删除这个文件
+```
+
+### 7. 上传接口接入安全函数
+
+```python
+file_path = get_upload_file_path(upload_file.filename)  # 根据上传文件名生成安全的文件路径
+
+if file_path is None:  # 如果上传文件名不安全
+    return RedirectResponse(url="/files", status_code=303)  # 回到文件列表页面
+```
+
+这样上传、下载、删除都不再直接拼路径，而是先经过同一个安全函数。
+
+### 8. 本次验证结果
+
+已验证：
+
+```text
+uploads 目录为空时，页面显示“暂无上传文件”；
+上传文件正常；
+点击文件名下载正常；
+点击删除时会先弹出确认框；
+确认删除后文件会消失；
+上传、下载、删除接入安全函数后，原功能没有被破坏。
+```
+
+代码检查：
+
+```text
+app/routers/files.py 语法检查通过。
+```
+
+### 9. 当前项目状态
+
+第一版本地核心功能已经完成：
+
+```text
+上传 + 列表 + 下载 + 删除
+```
+
+下一阶段计划：
+
+```text
+回看 Git 和 GitHub 历史版本；
+理解 commit、push、main、origin；
+把这一版部署到 Ubuntu 云服务器。
+```
+
+### 10. 本次 Git 记录
+
+本次代码已提交：
+
+```text
+822c804 整理文件管理页面和路径安全
+```
+
+这次提交包含：
+
+```text
+app/routers/files.py
+app/templates/files.html
+```
+
+本节笔记需要单独提交：
+
+```bash
+git add docs/learning-notes.md
+git commit -m "记录文件管理整理学习笔记"
+git push
+```
+
+注意继续不要提交：
+
+```text
+app/db/models.py
+uploads/
+```
+
 ## 二十三、实现文件删除功能
 
 ### 1. 本次小目标
