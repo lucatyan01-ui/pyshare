@@ -18,20 +18,31 @@
 
         <h2>已上传文件</h2>
 
-        <!-- 文件列表：files 是后端传给模板的文件名列表 -->
-        <ul>
-            {% for file in files %}
-                <!-- 每循环一次，就把一个文件名显示成下载链接 -->
-                <li>
-                    <!-- href 是点击后访问的地址，{{ file }} 会被 Jinja2 替换成真实文件名 -->
-                    <a href="/files/download/{{ file }}">{{ file }}</a>
+        <!-- 如果 files 列表里有文件，就显示文件列表 -->
+        {% if files %}
+            <!-- 文件列表：files 是后端传给模板的文件名列表 -->
+            <ul>
+                {% for file in files %}
+                    <!-- 每循环一次，就把一个文件名显示成下载链接 -->
+                    <li>
+                        <!-- href 是点击后访问的地址，{{ file }} 会被 Jinja2 替换成真实文件名 -->
+                        <a href="/files/download/{{ file }}">{{ file }}</a>
 
-                    <!-- 删除表单：点击删除按钮后，向后端删除接口发送 POST 请求 -->
-                    <form method="post" action="/files/delete/{{ file }}" style="display: inline;">
-                        <button type="submit">删除</button>
-                    </form>
-                </li>
-            {% endfor %}
-        </ul>
+                        <!-- 删除表单：点击删除按钮后，先弹出确认框，确认后才向后端删除接口发送 POST 请求 -->
+                        <form
+                            method="post"
+                            action="/files/delete/{{ file }}"
+                            style="display: inline;"
+                            onsubmit="return confirm('确定要删除这个文件吗？');"
+                        >
+                            <button type="submit">删除</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <!-- 如果 files 列表为空，就显示空状态提示 -->
+            <p>暂无上传文件</p>
+        {% endif %}
     </body>
 </html>
