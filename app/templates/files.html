@@ -25,13 +25,15 @@
                 {% for file in files %}
                     <!-- 每循环一次，就把一个文件名显示成下载链接 -->
                     <li>
-                        <!-- href 是点击后访问的地址，{{ file }} 会被 Jinja2 替换成真实文件名 -->
-                        <a href="/files/download/{{ file }}">{{ file }}</a>
+                        <!-- href 是点击后访问的地址，{{ file.name }} 会被 Jinja2 替换成真实文件名 -->
+                        <a href="/files/download/{{ file.name }}">{{ file.name }}</a>
+                        <!-- file.size 是后端传来的文件大小，单位是字节 -->
+                        <span>大小：{{ file.size }} 字节</span>
 
                         <!-- 删除表单：点击删除按钮后，先弹出确认框，确认后才向后端删除接口发送 POST 请求 -->
                         <form
                             method="post"
-                            action="/files/delete/{{ file }}"
+                            action="/files/delete/{{ file.name }}"
                             style="display: inline;"
                             onsubmit="return confirm('确定要删除这个文件吗？');"
                         >

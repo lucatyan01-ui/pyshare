@@ -2731,6 +2731,218 @@ app/db/models.py
 uploads/
 ```
 
+## 二十七、显示文件大小：list、dict 和 Path.stat()
+
+### 1. 本次小目标
+
+之前文件列表只显示文件名：
+
+```text
+a.txt
+b.docx
+```
+
+本次目标：
+
+```text
+文件名 + 文件大小
+```
+
+例如：
+
+```text
+a.txt  大小：123 字节
+```
+
+### 2. 后端数据结构变化
+
+旧写法：
+
+```python
+files = [path.name for path in upload_dir.iterdir() if path.is_file()]
+```
+
+旧数据结构是“字符串列表”：
+
+```python
+["a.txt", "b.docx"]
+```
+
+新写法：
+
+```python
+# 旧写法：只读取文件名列表。
+# files = [path.name for path in upload_dir.iterdir() if path.is_file()]  # 读取 uploads 目录中的文件名列表
+files = [  # 读取 uploads 目录中的文件信息列表
+    {
+        "name": path.name,  # 文件名
+        "size": path.stat().st_size,  # 文件大小，单位是字节
+    }
+    for path in upload_dir.iterdir()  # 遍历 uploads 目录中的每个路径
+    if path.is_file()  # 只保留文件，不显示目录
+]
+```
+
+新数据结构是“字典列表”：
+
+```python
+[
+    {"name": "a.txt", "size": 123},
+    {"name": "b.docx", "size": 4567},
+]
+```
+
+### 3. list 和 dict
+
+`list` 是列表，表示一组数据：
+
+```python
+["a.txt", "b.docx"]
+```
+
+`dict` 是字典，表示一条数据的多个属性：
+
+```python
+{"name": "a.txt", "size": 123}
+```
+
+本次的 `files` 是：
+
+```text
+列表里放多个字典。
+```
+
+也就是：
+
+```python
+files = [
+    {"name": "a.txt", "size": 123},
+    {"name": "b.docx", "size": 4567},
+]
+```
+
+### 4. path.stat().st_size
+
+```python
+path.stat()
+```
+
+作用：
+
+```text
+获取文件的状态信息。
+```
+
+例如：
+
+```text
+文件大小
+修改时间
+权限信息
+```
+
+```python
+path.stat().st_size
+```
+
+作用：
+
+```text
+获取文件大小，单位是字节。
+```
+
+### 5. 模板从 file 改成 file.name / file.size
+
+因为以前 `file` 是字符串：
+
+```python
+file = "a.txt"
+```
+
+所以模板里可以直接写：
+
+```html
+{{ file }}
+```
+
+现在 `file` 是字典：
+
+```python
+file = {"name": "a.txt", "size": 123}
+```
+
+所以模板里要写：
+
+```html
+{{ file.name }}
+{{ file.size }}
+```
+
+本次修改：
+
+```html
+<!-- href 是点击后访问的地址，{{ file.name }} 会被 Jinja2 替换成真实文件名 -->
+<a href="/files/download/{{ file.name }}">{{ file.name }}</a>
+<!-- file.size 是后端传来的文件大小，单位是字节 -->
+<span>大小：{{ file.size }} 字节</span>
+```
+
+删除接口也要改：
+
+```html
+action="/files/delete/{{ file.name }}"
+```
+
+如果忘记把删除接口改成 `file.name`，后端就拿不到正确文件名。
+
+### 6. 本次验证结果
+
+本地验证：
+
+```text
+/files 页面能打开；
+上传文件后能显示文件名和大小；
+点击文件名可以下载；
+点击删除可以删除；
+原有功能没有被破坏。
+```
+
+### 7. 本次学到的 Python Web 知识
+
+```text
+list：保存多条数据
+dict：保存一条数据的多个字段
+Path.stat()：读取文件状态
+st_size：文件大小，单位字节
+Jinja2 可以用 file.name 读取字典里的 name 字段
+后端数据结构变了，前端模板也要同步修改
+```
+
+### 8. 本次 Git 操作
+
+本次涉及文件：
+
+```text
+app/routers/files.py
+app/templates/files.html
+docs/learning-notes.md
+```
+
+建议提交：
+
+```bash
+git add app/routers/files.py app/templates/files.html docs/learning-notes.md
+git commit -m "显示上传文件大小"
+git push
+```
+
+注意继续不要提交：
+
+```text
+app/db/models.py
+uploads/
+```
+
 ## 二十六、第一版部署到云服务器
 
 ### 1. 本次目标

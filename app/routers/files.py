@@ -29,7 +29,16 @@ def get_upload_file_path(filename: str):  # 根据文件名生成安全的上传
 
 @router.get("/files")  # 注册一个 GET 接口，访问地址是 /files
 def files_page(request: Request):  # 定义文件管理页面处理函数，并接收浏览器请求对象
-    files = [path.name for path in upload_dir.iterdir() if path.is_file()]  # 读取 uploads 目录中的文件名列表
+    # 旧写法：只读取文件名列表。
+    # files = [path.name for path in upload_dir.iterdir() if path.is_file()]  # 读取 uploads 目录中的文件名列表
+    files = [  # 读取 uploads 目录中的文件信息列表
+        {
+            "name": path.name,  # 文件名
+            "size": path.stat().st_size,  # 文件大小，单位是字节
+        }
+        for path in upload_dir.iterdir()  # 遍历 uploads 目录中的每个路径
+        if path.is_file()  # 只保留文件，不显示目录
+    ]
     return templates.TemplateResponse(  # 返回 HTML 模板响应
         "files.html",  # 指定要渲染的模板文件名
         {"request": request, "files": files},  # 把 request 和文件列表传给模板
